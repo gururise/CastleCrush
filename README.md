@@ -1,10 +1,8 @@
 # Castle Crush
 ## Software
----
 * Godot 3.5.1
 
 ## Git Commit Instructions
----
 Whenever you start working on a new issue, please CLONE and pull the latest release from GitHub!
 
 0. Delete any old directories of old issues you were working on.
@@ -18,5 +16,4 @@ Whenever you start working on a new issue, please CLONE and pull the latest rele
 8. After I test your changes, I will merge your pull request to main branch
 
 ## Issues/Tasks
----
 Please see the Project [Issue Tracker](https://github.com/gururise/CastleCrush/issues)

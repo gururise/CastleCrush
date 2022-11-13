@@ -49,7 +49,7 @@ func _input(event):
 			# if else on shape type is what you set_cell
 			current_shape = getShape()
 			block_sprite.set_texture(textures[current_shape])
-			pass
+
 	if event is InputEventMouseMotion:
 		block_sprite.position = event.position
 

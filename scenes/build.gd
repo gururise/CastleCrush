@@ -4,56 +4,121 @@ extends Node2D
 var cells : Array
 onready var tilemap : TileMap = $TileMap
 
-var shapes = ['I','SQUARE','L1', 'L2', 'S1', 'S2', 'T']
-var textures = {'I': preload("res://gfx/I.png"), 'SQUARE':  preload("res://gfx/SQUARE.png"), 'L1': preload("res://gfx/L1.png"), 'L2': preload("res://gfx/L2.png"),'S1': preload("res://gfx/S1.png"), 'S2': preload("res://gfx/S2.png"),'T': preload("res://gfx/T.png")}
-
+var orientation = 0
 onready var block_sprite = get_node("Block")
 
-var current_shape = shapes[0]
+var shapes = {
+	"I": {
+		"blocks": [[0, 0], [0, 1], [0, -1], [0, -2]],
+		"texture": preload("res://gfx/I.png")
+	},
+	"O": {
+		"blocks": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"texture": preload("res://gfx/O.png")
+	},
+	"T": {
+		"blocks": [[0, 0], [1, 0], [-1, 0], [0, 1]],
+		"texture": preload("res://gfx/T.png")
+	},
+	"S": {
+		"blocks": [[0, 0], [1, 0], [-1, 1], [0, 1]],
+		"texture": preload("res://gfx/S.png")
+	},
+	"Z": {
+		"blocks": [[0, 0], [1, 0], [1, 1], [2, 1]],
+		"texture": preload("res://gfx/Z.png")
+	},
+	"J": {
+		"blocks": [[0, 0], [1, 0], [2, 0], [2, 1]],
+		"texture": preload("res://gfx/J.png")
+	},
+	"L": {
+		"blocks": [[0, 1], [1, 1], [2, 1], [2, 0]],
+		"texture": preload("res://gfx/L.png")
+	}
+}
+
+var current_shape
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	randomize()
 	cells = tilemap.get_used_cells()
-	current_shape = shapes[randi() % len(shapes)]
-	block_sprite.set_texture(textures[current_shape])
-	
-
+	var keys = shapes.keys()
+	current_shape = keys[randi() % keys.size()]
+	block_sprite.set_texture(shapes[current_shape].texture)
+	block_sprite.rotation_degrees = orientation * 90
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	pass
 
 func _input(event):
-	if event is InputEventMouseButton:
-		var local_position = tilemap.to_local(event.position)
-		var map_position = tilemap.world_to_map(local_position)
-		#var cell = tilemap.get_cellv(map_position)
-		if event.button_index == BUTTON_LEFT and event.pressed == true:
-			match current_shape:
-				'I':
-					var current_x = map_position.x
-					var current_y = map_position.y
-					var I_tiles = [Vector2(current_x, current_y - 2), Vector2(current_x, current_y - 1), Vector2(current_x, current_y), Vector2(current_x, current_y + 1), Vector2(current_x, current_y + 2)]
-					for tile in I_tiles:
-						tilemap.set_cellv(tile, 1)
-			# select a new shape after placing the current shape
-			current_shape = _get_shape()
-			print(current_shape)
-			block_sprite.set_texture(textures[current_shape])
-		elif event.button_index == BUTTON_RIGHT and event.pressed == true:
-			tilemap.set_cellv(map_position, 0)
-	if event is InputEventKey and event.pressed:
-		if event.scancode == KEY_SPACE:
-			# change texture
-			# map position 
-			# map_position.x and map_position.y depending on shape
-			# if else on shape type is what you set_cell
-			current_shape = _get_shape()
-			block_sprite.set_texture(textures[current_shape])
-
 	if event is InputEventMouseMotion:
 		block_sprite.position = event.position
 
+		
+	if event is InputEventMouseButton:
+		var local_position = tilemap.to_local(event.position)
+		var map_position = tilemap.world_to_map(local_position)
+
+		if event.button_index == BUTTON_LEFT and event.pressed:
+			var shape_blocks = shapes[current_shape].blocks
+			for block in shape_blocks:
+				var rotated_block = rotate_block(block, orientation)
+				
+				var pos = (map_position + rotated_block).floor()
+				tilemap.set_cellv(pos, 1, true)
+			# select a new shape after placing the current shape
+			var prev_shape = current_shape
+			while prev_shape == current_shape:
+				current_shape = _get_shape()
+				orientation = _get_orientation()
+
+			block_sprite.rotation_degrees = orientation * 90
+			block_sprite.set_texture(shapes[current_shape].texture)
+				
+		if event.button_index == BUTTON_RIGHT and event.pressed:
+			tilemap.set_cellv(map_position, 0)
+			
+	if event is InputEventKey and event.pressed:
+		if event.scancode == KEY_SPACE:
+			var prev_shape = current_shape
+			while prev_shape == current_shape:
+				current_shape = _get_shape()
+
+		if event.scancode == KEY_E:
+			orientation += 1
+			if orientation > 3:
+				orientation = 0
+
+		if event.scancode == KEY_W:
+			orientation -= 1
+			if orientation < 0:
+				orientation = 4
+			
+		block_sprite.rotation_degrees = orientation * 90
+		block_sprite.set_texture(shapes[current_shape].texture)
+			
+
+
+func rotate_block(block, orientation):
+	var x = block[0]
+	var y = block[1]
+	if orientation == 0:
+		return Vector2(x, y)
+	elif orientation == 1:
+		return Vector2(-y, x)
+	elif orientation == 2:
+		return Vector2(-x, -y)
+	elif orientation == 3:
+		return Vector2(y, -x)
+
 func _get_shape():
-	return shapes[randi() % len(shapes)]
+	var keys = shapes.keys()
+	var random_shape = keys[randi() % keys.size()]
+
+	return random_shape
+
+func _get_orientation():
+	return randi() % 4
